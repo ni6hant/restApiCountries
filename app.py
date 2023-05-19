@@ -13,10 +13,10 @@ db = SQLAlchemy(app)
 
 # Country Model
 class Country(db.Model):
-    __tablename__ = 'countries'
+    __tablename__ = 'country'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    cca = db.Column(db.String)
+    cca3 = db.Column(db.String)
     currency_code = db.Column(db.String)
     currency = db.Column(db.String)
     capital = db.Column(db.String)
@@ -26,23 +26,18 @@ class Country(db.Model):
     map_url = db.Column(db.String)
     population = db.Column(db.BigInteger)
     flag_url = db.Column(db.String)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now)
-    neighbours = db.relationship(
-        'CountryNeighbour',
-        foreign_keys='CountryNeighbour.country_id',
-        backref='country',
-        lazy=True
-    )
+    created_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)
+    neighbours = db.relationship('CountryNeighbours', backref='country', foreign_keys='CountryNeighbours.country_id')
 
 
-class CountryNeighbour(db.Model):
+class CountryNeighbours(db.Model):
     __tablename__ = 'country_neighbours'
     id = db.Column(db.Integer, primary_key=True)
-    country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), primary_key=True)
-    neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now)
+    country_id = db.Column(db.Integer, db.ForeignKey('country.id'))
+    neighbour_country_id = db.Column(db.Integer, db.ForeignKey('country.id'))
+    created_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)
 
 # Create Database if it doesn't exist
 with app.app_context():
@@ -54,26 +49,30 @@ def populate_countries():
     response = requests.get('https://restcountries.com/v3.1/all')
     data = response.json()
 
+    i=0
+
     for item in data:
         # Extract data from the item
         name = item['name']['common']
-        cca = item['cca3']
-        currency_code = item['currency_code']
-        currency = item.get('currencies', 0).get('name')
+        cca3 = item['cca3']
+        currencies = item.get('currencies', {})
+        currency_data = next(iter(currencies.values()), {})
+        currency_code = list(currencies)[0]
+        currency = currency_data.get('name')
         capital = item.get('capital', [''])[0]
-        region = item['region']
-        subregion = item['subregion']
+        region = item.get('region')
+        subregion = item.get('subregion')
         area = item['area']
         map_url = item.get('maps', {}).get('googleMaps')
         population = item.get('population')
-        flag_url = item['flags']
+        flag_url = item['flags']['png']
         created_at = datetime.now()
         updated_at = datetime.now()
 
         # Create a new Country instance
         country = Country(
             name=name,
-            cca=cca,
+            cca3=cca3,
             currency_code=currency_code,
             currency=currency,
             capital=capital,
@@ -94,9 +93,9 @@ def populate_countries():
         # Create country neighbors
         borders = item.get('borders', [])
         for neighbour_cca in borders:
-            neighbour_country = Country.query.filter_by(cca=neighbour_cca).first()
+            neighbour_country = Country.query.filter_by(cca3=neighbour_cca).first()
             if neighbour_country:
-                country_neighbour = CountryNeighbour(
+                country_neighbour = CountryNeighbours(
                     country_id=country.id,
                     neighbour_country_id=neighbour_country.id,
                     created_at=datetime.now(),
