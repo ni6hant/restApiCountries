@@ -106,7 +106,7 @@ def populate_countries():
     return 'Countries populated successfully!'
 
 # API to return all the countries
-@app.route('/countries', methods=['GET'])
+@app.route('/country', methods=['GET'])
 def get_all_countries():
     sort_by = request.args.get('sort_by', 'a_to_z')
     page = int(request.args.get('page', 1))
@@ -147,7 +147,7 @@ def get_all_countries():
         countries.append({
             'id': country.id,
             'name': country.name,
-            'cca': country.cca,
+            'cca3': country.cca3,
             'currency_code': country.currency_code,
             'currency': country.currency,
             'capital': country.capital,
@@ -157,7 +157,6 @@ def get_all_countries():
             'map_url': country.map_url,
             'population': country.population,
             'flag_url': country.flag_url,
-            'neighbours': [neighbour.neighbour_country.cca for neighbour in country.neighbours]
         })
 
     response = {
@@ -169,6 +168,40 @@ def get_all_countries():
     }
 
     return jsonify(response)
+
+# API to get a country detail
+@app.route('/country/<int:country_id>', methods=['GET'])
+def get_country_detail(country_id):
+    country = Country.query.get(country_id)
+
+    if country is None:
+        return jsonify({
+            'message': 'Country not found',
+            'data': {}
+        }), 404
+
+    response = {
+        'message': 'Country detail',
+        'data': {
+            'country': {
+                'id': country.id,
+                'name': country.name,
+                'cca3': country.cca3,
+                'currency_code': country.currency_code,
+                'currency': country.currency,
+                'capital': country.capital,
+                'region': country.region,
+                'subregion': country.subregion,
+                'area': country.area,
+                'map_url': country.map_url,
+                'population': country.population,
+                'flag_url': country.flag_url
+            }
+        }
+    }
+
+    return jsonify(response)
+
 
 if __name__ == '__main__':
     app.run()

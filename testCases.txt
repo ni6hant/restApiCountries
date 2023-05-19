@@ -1,4 +1,7 @@
 1. API to return all the countries
-
 curl --location 'http://localhost:5000/country'
+
+2. API to get a country detail
+curl --location 'http://localhost:5000/country/25'
+
 
