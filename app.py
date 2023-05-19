@@ -35,7 +35,9 @@ class CountryNeighbour(db.Model):
     __tablename__ = 'country_neighbours'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
     country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
-    neighbour_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
+    country = relationship('Country', foreign_keys='CountryNeighbour.country_id', backref='neighbours', lazy=True)
+    neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
+    neighbour_country = relationship('Country', foreign_keys='CountryNeighbour.neighbour_country_id', backref='neighbour', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now)
 
@@ -54,8 +56,8 @@ def populate_countries():
         # Extract data from the item
         name = item['name']['common']
         cca = item['cca2']
-        currency = item.get('currencies', {})
-        currency_code = currency.get('code', '')
+        currency_code = item.get('currencies', {}).get('currency_code', {}).get('name')
+        currency = str(item.get('currencies', {}))  # Convert currencies dictionary to a string
         capital = item.get('capital', [''])[0]
         region = item['region']
         subregion = item.get('subregion', '')
@@ -85,6 +87,20 @@ def populate_countries():
 
         # Add the country to the database session
         db.session.add(country)
+        db.session.flush()  # Flush changes to get the auto-generated ID
+
+        # Create country neighbors
+        neighbours = item.get('borders', [])
+        for neighbour in neighbours:
+            neighbour_country = Country.query.filter_by(cca=neighbour).first()
+            if neighbour_country:
+                country_neighbour = CountryNeighbour(
+                    country_id=country.id,
+                    neighbour_country_id=neighbour_country.id,
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
+                )
+                db.session.add(country_neighbour)
 
     # Commit the changes to the database
     db.session.commit()
@@ -143,7 +159,7 @@ def get_all_countries():
             'map_url': country.map_url,
             'population': country.population,
             'flag_url': country.flag_url,
-            'neighbours': [neighbour.neighbour_id for neighbour in country.neighbours]
+            'neighbours': [neighbour.neighbour_country_id for neighbour in country.neighbours]
         })
 
     response = {
