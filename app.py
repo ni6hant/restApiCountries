@@ -30,16 +30,15 @@ class Country(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now)
     neighbours = relationship('CountryNeighbour', foreign_keys='CountryNeighbour.country_id', backref='country', lazy=True)
 
-# CountryNeighbour Model
 class CountryNeighbour(db.Model):
     __tablename__ = 'country_neighbours'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
+    id = db.Column(db.Integer, primary_key=True)
     country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
-    country = relationship('Country', foreign_keys='CountryNeighbour.country_id', backref='neighbours', lazy=True)
     neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
-    neighbour_country = relationship('Country', foreign_keys='CountryNeighbour.neighbour_country_id', backref='neighbour', lazy=True)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+    # Change the backref property name to 'neighbour_country'
+    neighbour_country = db.relationship('Country', foreign_keys=[neighbour_country_id], backref='neighbouring_countries')
 
 
 # Create Database if it doesn't exist
