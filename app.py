@@ -1,14 +1,12 @@
 import requests
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
 from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flaskbloguser:WKNXpBOtYpcvtWBOpjMPFOAe1IgGuWWm@dpg-chgr2367avjbbjpntevg-a.oregon-postgres.render.com/flaskblogdb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'WKNXpBOtYpcvtWBOpjMPFOAe1IgGuWWm'
-
 db = SQLAlchemy(app)
 
 # Country Model
@@ -197,6 +195,46 @@ def get_country_detail(country_id):
                 'population': country.population,
                 'flag_url': country.flag_url
             }
+        }
+    }
+
+    return jsonify(response)
+
+# API to get country neighbors
+@app.route('/country/<int:country_id>/neighbour', methods=['GET'])
+def get_country_neighbours(country_id):
+    country = Country.query.get(country_id)
+
+    if country is None:
+        return jsonify({
+            'message': 'Country not found',
+            'data': {}
+        }), 404
+
+    neighbours = Country.query.join(CountryNeighbours, Country.id == CountryNeighbours.neighbour_country_id).filter(
+        CountryNeighbours.country_id == country.id).all()
+
+    country_neighbours = []
+    for neighbour in neighbours:
+        country_neighbours.append({
+            'id': neighbour.id,
+            'name': neighbour.name,
+            'cca3': neighbour.cca3,
+            'currency_code': neighbour.currency_code,
+            'currency': neighbour.currency,
+            'capital': neighbour.capital,
+            'region': neighbour.region,
+            'subregion': neighbour.subregion,
+            'area': neighbour.area,
+            'map_url': neighbour.map_url,
+            'population': neighbour.population,
+            'flag_url': neighbour.flag_url,
+        })
+
+    response = {
+        'message': 'Country neighbours',
+        'data': {
+            'countries': country_neighbours
         }
     }
 

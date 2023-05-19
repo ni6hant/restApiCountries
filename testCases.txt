@@ -4,4 +4,24 @@ curl --location 'http://localhost:5000/country'
 2. API to get a country detail
 curl --location 'http://localhost:5000/country/25'
 
+3. API to get country neighnbours
+curl --location 'http://localhost:5000/country/25/neighbour'
 
+4. API to get countries in sorted order
+curl --location 'http://localhost:5000/country?sort_by=a_to_z'
+
+5. API to get countries in paginated list
+curl --location 'http://localhost:5000/country?sort_by=a_toz&page=1&limit=10'
+
+6. API to search a countries by:
+Name
+curl --location 'http://localhost:5000/country?sort_by=a_toz&page=1&limit=10&name=united'
+
+Region
+curl --location 'http://localhost:5000/country?sort_by=a_toz&page=1&limit=10&region=asia'
+
+Subregion
+curl --location 'http://localhost:5000/country?sort_by=a_toz&page=1&limit=10&subregion=Central'
+
+All:
+curl --location 'http://localhost:5000/country?sort_by=a_toz&page=1&limit=10&name=united&region=america&subregion=Caribbean'
