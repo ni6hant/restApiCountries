@@ -37,9 +37,7 @@ class CountryNeighbour(db.Model):
     neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     updated_at = db.Column(db.DateTime, nullable=False)
-    # Change the backref property name to 'neighbour_country'
-    neighbour_country = db.relationship('Country', foreign_keys=[neighbour_country_id], backref='neighbouring_countries')
-
+    neighbour_country = relationship('Country', foreign_keys=[neighbour_country_id], backref='neighbouring_countries')
 
 # Create Database if it doesn't exist
 with app.app_context():
@@ -158,7 +156,7 @@ def get_all_countries():
             'map_url': country.map_url,
             'population': country.population,
             'flag_url': country.flag_url,
-            'neighbours': [neighbour.neighbour_country_id for neighbour in country.neighbours]
+            'neighbours': [neighbour.neighbour_country.cca for neighbour in country.neighbours]
         })
 
     response = {
