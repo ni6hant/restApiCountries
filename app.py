@@ -14,7 +14,7 @@ db = SQLAlchemy(app)
 # Country Model
 class Country(db.Model):
     __tablename__ = 'countries'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True, unique=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     cca = db.Column(db.String)
     currency_code = db.Column(db.String)
@@ -28,16 +28,21 @@ class Country(db.Model):
     flag_url = db.Column(db.String)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now)
-    neighbours = relationship('CountryNeighbour', foreign_keys='CountryNeighbour.country_id', backref='country', lazy=True)
+    neighbours = db.relationship(
+        'CountryNeighbour',
+        foreign_keys='CountryNeighbour.country_id',
+        backref='country',
+        lazy=True
+    )
+
 
 class CountryNeighbour(db.Model):
     __tablename__ = 'country_neighbours'
     id = db.Column(db.Integer, primary_key=True)
-    country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
-    neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False)
-    updated_at = db.Column(db.DateTime, nullable=False)
-    neighbour_country = relationship('Country', foreign_keys=[neighbour_country_id], backref='neighbouring_countries')
+    country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), primary_key=True)
+    neighbour_country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now)
 
 # Create Database if it doesn't exist
 with app.app_context():
@@ -46,19 +51,19 @@ with app.app_context():
 # API endpoint to populate countries
 @app.route('/populate_countries', methods=['POST'])
 def populate_countries():
-    response = requests.get('https://restcountries.com/v3/all')
+    response = requests.get('https://restcountries.com/v3.1/all')
     data = response.json()
 
     for item in data:
         # Extract data from the item
         name = item['name']['common']
-        cca = item['cca2']
-        currency_code = item.get('currencies', {}).get('currency_code', {}).get('name')
-        currency = str(item.get('currencies', {}))  # Convert currencies dictionary to a string
+        cca = item['cca3']
+        currency_code = item['currency_code']
+        currency = item.get('currencies', 0).get('name')
         capital = item.get('capital', [''])[0]
         region = item['region']
-        subregion = item.get('subregion', '')
-        area = item.get('area', 0)
+        subregion = item['subregion']
+        area = item['area']
         map_url = item.get('maps', {}).get('googleMaps')
         population = item.get('population')
         flag_url = item['flags']
@@ -87,9 +92,9 @@ def populate_countries():
         db.session.flush()  # Flush changes to get the auto-generated ID
 
         # Create country neighbors
-        neighbours = item.get('borders', [])
-        for neighbour in neighbours:
-            neighbour_country = Country.query.filter_by(cca=neighbour).first()
+        borders = item.get('borders', [])
+        for neighbour_cca in borders:
+            neighbour_country = Country.query.filter_by(cca=neighbour_cca).first()
             if neighbour_country:
                 country_neighbour = CountryNeighbour(
                     country_id=country.id,
@@ -105,7 +110,7 @@ def populate_countries():
     return 'Countries populated successfully!'
 
 # API to return all the countries
-@app.route('/country', methods=['GET'])
+@app.route('/countries', methods=['GET'])
 def get_all_countries():
     sort_by = request.args.get('sort_by', 'a_to_z')
     page = int(request.args.get('page', 1))
@@ -146,7 +151,7 @@ def get_all_countries():
         countries.append({
             'id': country.id,
             'name': country.name,
-            'cca3': country.cca,
+            'cca': country.cca,
             'currency_code': country.currency_code,
             'currency': country.currency,
             'capital': country.capital,
