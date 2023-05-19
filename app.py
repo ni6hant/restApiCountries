@@ -54,7 +54,7 @@ def populate_countries():
         cca3 = item['cca3']
         currencies = item.get('currencies', {})
         currency_data = next(iter(currencies.values()), {})
-        currency_code = list(currencies)[0]
+        currency_code = list(currencies)[0] if currencies else None
         currency = currency_data.get('name')
         capital = item.get('capital', [''])[0]
         region = item.get('region')
