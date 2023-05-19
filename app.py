@@ -30,7 +30,6 @@ class Country(db.Model):
     updated_at = db.Column(db.DateTime)
     neighbours = db.relationship('CountryNeighbours', backref='country', foreign_keys='CountryNeighbours.country_id')
 
-
 class CountryNeighbours(db.Model):
     __tablename__ = 'country_neighbours'
     id = db.Column(db.Integer, primary_key=True)
@@ -48,8 +47,6 @@ with app.app_context():
 def populate_countries():
     response = requests.get('https://restcountries.com/v3.1/all')
     data = response.json()
-
-    i=0
 
     for item in data:
         # Extract data from the item
